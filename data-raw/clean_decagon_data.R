@@ -1,7 +1,7 @@
 rm(list = ls())
 
-library( ggplot2 )
 library(tidyverse)
+library(stringr)
 library(zoo)
 
 source( 'data-raw/import_and_format_decagon_data.R')
