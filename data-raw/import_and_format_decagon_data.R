@@ -65,23 +65,19 @@ import_and_format <- function( folders, q_info, port_depth) {
       separate(col = port, into = c('port', 'measure') , sep = '_')
   }
 
-  # end functions ------------------------------------------------------------- #
+  get_files <- function( folder ){
 
-  data_list <- list(NA)
-
-  for (i in 1:length(folders)) {
-
-    record_file <- dir(folders[i] , pattern = 'logger_info.csv', full.names = TRUE)
+    record_file <- dir(folder , pattern = 'logger_info.csv', full.names = TRUE)
 
     record <- read.csv(record_file)
 
-    f <- dir(folders[i], pattern = '^E[ML][0-9]+.*txt$', full.names = TRUE)
+    f <- dir(folder, pattern = '^E[ML][0-9]+.*txt$', full.names = TRUE)
 
-    f_raw <- dir(folders[i], pattern = '^E[ML][0-9]+.*csv$', full.names = TRUE, recursive = TRUE)
+    f_raw <- dir(folder, pattern = '^E[ML][0-9]+.*csv$', full.names = TRUE, recursive = TRUE)
 
-    f2 <- dir(folders[i], pattern = '^[0-9]+(_[0-9]+_C)?.*txt$', full.names = TRUE)
+    f2 <- dir(folder, pattern = '^[0-9]+(_[0-9]+_C)?.*txt$', full.names = TRUE)
 
-    f2_raw <- dir(folders[i], pattern = '^[0-9]+(_[0-9]+_C)?.*csv$', full.names = TRUE, recursive = TRUE)
+    f2_raw <- dir(folder, pattern = '^[0-9]+(_[0-9]+_C)?.*csv$', full.names = TRUE, recursive = TRUE)
 
     f <- c(f, f_raw, f2_raw, f2)
 
@@ -101,50 +97,52 @@ import_and_format <- function( folders, q_info, port_depth) {
       filter( type == '.txt') %>%
       select( - m_date )
 
-    d <- lapply(as.character(file_df$f), read.table, sep = '\t', colClasses = 'character')
+    out <- lapply(as.character(file_df$f), read.table, sep = '\t', colClasses = 'character')
 
-    names(d) <- file_df$logger
+    names(out) <- file_df$logger
 
-    d <- lapply(d, rename_cols)
+    out <- lapply(out, rename_cols)
 
-    d <- lapply(d, assign_NAs)
+    out <- lapply(out, assign_NAs)
 
-    d <- lapply(d, make_date)
+    out <- lapply(out, make_date)
 
-    d <- lapply(d, make_readings )
+    out <- lapply(out, make_readings )
 
-    d <- lapply( d, gather_ports )
+    out <- lapply( out, gather_ports )
 
-    df <- do.call(rbind, d)
-    rm(d)
+    out <- do.call(rbind, out)
 
-    df$id <- gsub( pattern = '\\.[0-9]+$', replacement = '', x = row.names(df))
+    out$id <- gsub( pattern = '\\.[0-9]+$', replacement = '', x = row.names(out))
 
-    df <- merge(df, record, by.x = 'id', by.y = 'logger' )
+    out <- merge(out, record, by.x = 'id', by.y = 'logger' )
 
-    df <- merge(df, file_df, by.x = 'id', by.y = 'logger')
+    out <- merge(out, file_df, by.x = 'id', by.y = 'logger')
 
-    df$value <- as.numeric(df$value)
+    out$value <- as.numeric(out$value)
 
-    df <-  df %>%
+    out <-  out %>%
       mutate( tail = ifelse ( is.na( tail ) , 2 , tail ), hours = ifelse(is.na(hours), 0, hours)) %>%
       filter( reading > tail ) %>%
       mutate( new_date = date - hours*60*60)
 
-    data_list[[i]] <- df
-    rm(df)
+    return(out)
   }
 
-  df <- do.call( rbind, data_list )  # bind the data lists from each folder
+  # end functions ------------------------------------------------------------- #
+  ncores <- parallel::detectCores()
+  temp_data <- parallel::mclapply( folders,  get_files, mc.cores = ncores)
 
-  df  <-
-    df %>%
+  temp_dat <- do.call( rbind, temp_data )  # bind the data lists from each folder
+
+  temp_dat  <-
+    temp_dat %>%
     group_by(plot , port , measure, reading , date, value) %>%
     arrange(period ) %>% filter( row_number() == 1  ) # when there are duplicate records get data from only the first file
 
   q_info$plot <- gsub( q_info$QuadName, pattern = 'X', replacement = '')
 
-  df <- merge( df, q_info, by = 'plot')
+  temp_dat <- merge( temp_dat, q_info, by = 'plot')
 
   port_depth <- port_depth %>% gather( port, position, `Port.1`:`Port.5`)
 
@@ -152,13 +150,13 @@ import_and_format <- function( folders, q_info, port_depth) {
 
   port_depth$port <- str_replace(port_depth$port, pattern = '\\.', replacement = ' ')
 
-  df <- merge( df, port_depth, by = c('plot', 'period', 'port') )
+  temp_dat <- merge( temp_dat, port_depth, by = c('plot', 'period', 'port') )
 
-  df$date_started <- as.character ( levels( df$date_started )[df$date_started] )
-  df$date_started <- as.POSIXct( df$date_started, tz = 'MST' )
-  df$date_uploaded <- as.character(levels(df$date_uploaded)[ df$date_uploaded ])
-  df$date_uploaded <- as.POSIXct( df$date_uploaded, tz = 'MST')
+  temp_dat$date_started <- as.character ( levels( temp_dat$date_started )[temp_dat$date_started] )
+  temp_dat$date_started <- as.POSIXct( temp_dat$date_started, tz = 'MST' )
+  temp_dat$date_uploaded <- as.character(levels(temp_dat$date_uploaded)[ temp_dat$date_uploaded ])
+  temp_dat$date_uploaded <- as.POSIXct( temp_dat$date_uploaded, tz = 'MST')
 
-  return(df)
+  return(temp_dat)
 }
 

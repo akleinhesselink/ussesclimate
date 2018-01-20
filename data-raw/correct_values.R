@@ -2,7 +2,7 @@
 # Filter out bad readings ------------------------------------------------------------------------
 
 
-correct_values <- function(df ) {
+correct_values <- function(temp_dat ) {
 
   # My complicated steps for data classification:
   #   calculate rolling mean at 5 values
@@ -22,8 +22,8 @@ correct_values <- function(df ) {
   high_VWC_cutoff <- 0.01
   C_cutoff <- 400
 
-  df <-
-    df %>%
+  temp_dat <-
+    temp_dat %>%
     ungroup() %>%
     group_by(plot, position, measure ) %>%
     arrange( new_date) %>%
@@ -56,9 +56,9 @@ correct_values <- function(df ) {
     gather( stat, v, value, rllm, rllsd)
 
   # manually remove  ----------------------------------------------------------------------------------------
-  df$bad_window <- as.numeric(df$bad_window)
+  temp_dat$bad_window <- as.numeric(temp_dat$bad_window)
 
-  df <- df %>%
+  temp_dat <- temp_dat %>%
     mutate(bad_window = ifelse( plot == '7_8_C' & port == 'Port 4' & measure == 'VWC' & new_date > strptime( '2015-07-01', format = '%Y-%m-%d'), 1, bad_window ) ) %>%
     mutate(bad_window = ifelse( plot == 1 & position == '5W' & measure == 'VWC' , 1, bad_window)) %>%
     mutate(bad_window = ifelse( plot == '1_2_C' & position == '5E' & measure == 'VWC' & new_date > strptime( '2016-01-01', format = '%Y-%m-%d'), 1, bad_window ) ) %>%
@@ -75,23 +75,23 @@ correct_values <- function(df ) {
 
   # --------------------------------------------------------------------------------------------------------------------------------------
 
-  df$stat <- factor(df$stat, label = c('rolling mean', 'rolling sd', 'raw'))
-  df$plot <- as.character(df$plot)
-  df$bad_values <- factor(df$bad_window)
+  temp_dat$stat <- factor(temp_dat$stat, label = c('rolling mean', 'rolling sd', 'raw'))
+  temp_dat$plot <- as.character(temp_dat$plot)
+  temp_dat$bad_values <- factor(temp_dat$bad_window)
 
-  df <-
-    df %>%
+  temp_dat <-
+    temp_dat %>%
     group_by(plot, position, period, measure ) %>%
     #filter( good_date ==  1) %>%
     mutate( has_vals = sum(stat == 'raw' & !is.na(v) ) > 0 ) %>%
     filter( has_vals)
 
   #
-  df$depth <- factor(df$depth, labels = c('25 cm deep', '5 cm deep', 'air temperature'))
+  temp_dat$depth <- factor(temp_dat$depth, labels = c('25 cm deep', '5 cm deep', 'air temperature'))
   #
 
   #
-  # wide <- df %>% filter( plot == '7_8_C' & position == '5W' & measure == 'VWC') %>%  spread( stat, v )
+  # wide <- temp_dat %>% filter( plot == '7_8_C' & position == '5W' & measure == 'VWC') %>%  spread( stat, v )
   # #
   # ggplot( wide, aes( x = new_date, y = raw, color = bad_values )) +
   #     geom_point() +
@@ -102,7 +102,7 @@ correct_values <- function(df ) {
   #     geom_hline( aes( yintercept = low_VWC_cutoff), color = 'gray')
 
   # #
-  # # wide <- df %>% spread( stat, v ) %>% filter( position == '5E' & measure == 'VWC')
+  # # wide <- temp_dat %>% spread( stat, v ) %>% filter( position == '5E' & measure == 'VWC')
   #
   # ggplot( wide, aes( x = new_date, y = raw, color = bad_values )) +
   #   geom_point() +
@@ -110,7 +110,7 @@ correct_values <- function(df ) {
   #   geom_point (data = subset(  wide, low_outlier == 1 ), aes( x = new_date, y = raw), color = 'green' ) +
   #   xlim(strptime( c('2014-08-01', '2014-09-01'), '%Y-%m-%d', tz = 'MST'))
   #
-  #wide <- df %>% spread( stat, v ) %>% filter( position == 'air', measure == 'C')
+  #wide <- temp_dat %>% spread( stat, v ) %>% filter( position == 'air', measure == 'C')
   # #
   #   ggplot( wide, aes( x = new_date, y = raw, color = factor( highv )  , shape = bad_values)) +
   #     geom_point() +
@@ -119,5 +119,5 @@ correct_values <- function(df ) {
   #     geom_point (data = subset(  wide, low_outlier == 1 ), aes( x = new_date, y = raw), color = 'green' ) +
   #     xlim( strptime( c('2012-04-01', '2012-09-01'), '%Y-%m-%d', tz = 'MST'))
 
-  return(df)
+  return(temp_dat)
 }

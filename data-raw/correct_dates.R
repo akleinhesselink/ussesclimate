@@ -1,6 +1,6 @@
 
-check_dates <- function( df ) {
-  reading_list <- df %>% ungroup () %>% select( f, plot, id , period, new_date, reading ) %>% mutate( f = factor(f)) %>% distinct()
+check_dates <- function( temp_dat ) {
+  reading_list <- temp_dat %>% ungroup () %>% select( f, plot, id , period, new_date, reading ) %>% mutate( f = factor(f)) %>% distinct()
 
   table( reading_list$f, reading_list$period ) # one file per period
 
@@ -40,7 +40,7 @@ check_dates <- function( df ) {
 
 
 
-correct_dates <- function(df, check, season, tod){
+correct_dates <- function(temp_dat, check, season, tod){
 
   fill_in_hours_skipped <- function( x ) {
     hs = 0
@@ -61,57 +61,58 @@ correct_dates <- function(df, check, season, tod){
 
   check$new_date <- as.POSIXct ( as.character( check$new_date ) , format = '%Y-%m-%d %H:%M:%S', tz = 'MST' )
 
-  df %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
+  temp_dat %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
 
-  df <- left_join(df, check , by =c( 'f', 'new_date', 'reading' )) # join changes to main df
+  temp_dat <- left_join(temp_dat, check , by =c( 'f', 'new_date', 'reading' )) # join changes to main df
 
-  df <- df %>%
+  temp_dat <- temp_dat %>%
     ungroup () %>%
     group_by(f, plot, port, measure ) %>%
     arrange( reading ) %>%
     mutate( hours_skipped = ifelse( row_number() == 1 & is.na(change), 0, hours_skipped ))
 
-  df <- df %>%  do ( fill_in_hours_skipped(. ) ) # apply fill in hours function to all measurement groups
+  print("Correcting dates: ")
+  temp_dat <- temp_dat %>%  do ( fill_in_hours_skipped(. ) ) # apply fill in hours function to all measurement groups
 
   # actually make the date changes here ----------------------------------------------------------------------------------
 
-  df <- df %>%
+  temp_dat <- temp_dat %>%
     mutate( new_date = as.POSIXct(new_date - 60*60*hours_skipped, origin = '1970-01-01 00:00:00', tz = 'MST'))
 
   # ----------------------------------------------------------------------------------------------------------------------
-  df <- df %>%
+  temp_dat <- temp_dat %>%
     mutate ( good_date = ifelse ( new_date >= date_started - 60*60*48 & new_date <= date_uploaded + 60*60*48 , 1, 0))
 
-  #df %>% ungroup() %>% distinct( f, new_date) %>% group_by(good_date) %>% summarise( n() )
+  #temp_dat %>% ungroup() %>% distinct( f, new_date) %>% group_by(good_date) %>% summarise( n() )
 
-  #View( df %>% filter( good_date == 0 ) %>% group_by( f ) %>% distinct( f ) )
+  #View( temp_dat %>% filter( good_date == 0 ) %>% group_by( f ) %>% distinct( f ) )
 
-  #df %>% filter( good_date == 0 ) %>% group_by(f ) %>% distinct(f) %>% select( date_started, new_date, date_uploaded) %>% mutate( new_date > date_started & new_date < date_uploaded  )
+  #temp_dat %>% filter( good_date == 0 ) %>% group_by(f ) %>% distinct(f) %>% select( date_started, new_date, date_uploaded) %>% mutate( new_date > date_started & new_date < date_uploaded  )
 
   # check for readings from the same date, time and place # --------------------------------------------------------------
 
-  #df %>% group_by( plot, port, measure, new_date ) %>% mutate( n =  n() ) %>% filter( n > 1 )
+  #temp_dat %>% group_by( plot, port, measure, new_date ) %>% mutate( n =  n() ) %>% filter( n > 1 )
 
   # check earliest and latest dates -----------------------------------------------------------------
 
-  df %>% ungroup( ) %>% summarise ( max( new_date ), min( new_date ), which.min(new_date ), which.max(new_date ))
+  temp_dat %>% ungroup( ) %>% summarise ( max( new_date ), min( new_date ), which.min(new_date ), which.max(new_date ))
 
   # ----------------------------------------------------------------------------
 
-  df <- df %>%
+  temp_dat <- temp_dat %>%
     ungroup() %>%
     mutate( simple_date = as.Date(new_date, tz = 'MST'),
             hour = strftime( new_date, '%H', tz = 'MST'),
             year = strftime( new_date, '%Y', tz = 'MST'),
             month = strftime( new_date, '%m', tz = 'MST'))
 
-  df$month <- as.numeric( df$month)
-  df$hour <- as.numeric( df$hour)
+  temp_dat$month <- as.numeric( temp_dat$month)
+  temp_dat$hour <- as.numeric( temp_dat$hour)
 
-  df <- merge( df, season, by = 'month')
-  df <- merge( df, tod, by = 'hour')
+  temp_dat <- merge( temp_dat, season, by = 'month')
+  temp_dat <- merge( temp_dat, tod, by = 'hour')
 
-  return( df )
+  return( temp_dat )
 
 }
 
