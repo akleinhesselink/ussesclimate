@@ -4,7 +4,8 @@ library(tidyverse)
 library(stringr)
 library(zoo)
 
-source( 'data-raw/import_and_format_decagon_data.R')
+# source all functions ------------------------------ #
+source( 'data-raw/import_and_format.R')
 source( 'data-raw/correct_dates.R' )
 source( 'data-raw/correct_values.R')
 source( 'data-raw/merge_with_climate.R')
@@ -19,20 +20,21 @@ folders <- dir('data-raw/raw_soil_data', pattern = '20[0-9]{2}_[1-2]$', full.nam
 station_dat <- read.csv('data-raw/USSES_climate.csv')
 
 # ---------------------------------------------------#
-soil_moisture_data <- import_and_format(folders, q_info, port_depth)
+daily_soil_moisture <- import_and_format(folders, q_info, port_depth)
 
-check_dates(soil_moisture_data)
+check_dates(daily_soil_moisture)
 # Modify check dates.csv  by hand
 check <- read_csv('data-raw/check_dates_modified.csv') # read in file modified by hand
 
-soil_moisture_data %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
+daily_soil_moisture %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
 
-soil_moisture_data <-
-  correct_dates(soil_moisture_data, check, season, tod) %>%
+daily_soil_moisture <-
+  daily_soil_moisture %>%
+  correct_dates(check = check, season = season, tod = tod) %>%
   correct_values() %>%
   merge_with_climate(station_dat = station_dat)
 
 # save processed and cleaned data -------------
-devtools::use_data(soil_moisture_data, compress = 'gzip')
+devtools::use_data(daily_soil_moisture, compress = 'gzip')
 
 
