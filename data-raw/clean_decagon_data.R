@@ -7,7 +7,7 @@ library(zoo)
 source( 'data-raw/import_and_format_decagon_data.R')
 source( 'data-raw/correct_dates.R' )
 source( 'data-raw/correct_values.R')
-
+source( 'data-raw/merge_with_climate.R')
 # input -------------------------------------------- #
 
 q_info <- read.csv('data-raw/quad_info.csv')
@@ -15,6 +15,7 @@ port_depth <- read.csv('data-raw/sensor_positions.csv')
 season <- read.csv('data-raw/season_table.csv')
 tod <- read.csv('data-raw/tod_table.csv')
 folders <- dir('data-raw/raw_soil_data', pattern = '20[0-9]{2}_[1-2]$', full.names = TRUE)
+station_dat <- read.csv('data-raw/USSES_climate.csv')
 
 # ---------------------------------------------------#
 df <- import_and_format(folders, q_info, port_depth)
@@ -28,3 +29,6 @@ df %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% dist
 df <- correct_dates(df, check, season, tod)
 
 df <- correct_values(df)
+
+df <- merge_with_climate(df, station_dat)
+
