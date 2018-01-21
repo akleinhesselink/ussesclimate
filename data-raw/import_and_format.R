@@ -157,6 +157,12 @@ import_and_format <- function( folders, q_info, port_depth) {
   temp_dat$date_uploaded <- as.character(levels(temp_dat$date_uploaded)[ temp_dat$date_uploaded ])
   temp_dat$date_uploaded <- as.POSIXct( temp_dat$date_uploaded, tz = 'MST')
 
+  temp_dat <-
+    temp_dat %>%
+    select(plot, period, port, id, new_date, reading, measure, value,
+           f, date_started, date_uploaded, modified_date,
+           Treatment, PrecipGroup, quad, position, depth)
+
   return(temp_dat)
 }
 

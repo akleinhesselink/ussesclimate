@@ -40,7 +40,7 @@ check_dates <- function( temp_dat ) {
 
 
 
-correct_dates <- function(temp_dat, check, season, tod){
+correct_dates <- function(temp_dat, check){
 
   fill_in_hours_skipped <- function( x ) {
     hs = 0
@@ -58,15 +58,13 @@ correct_dates <- function(temp_dat, check, season, tod){
     return( x )
   }
 
-
   check$new_date <- as.POSIXct ( as.character( check$new_date ) , format = '%Y-%m-%d %H:%M:%S', tz = 'MST' )
-
-  temp_dat %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
 
   temp_dat <- left_join(temp_dat, check , by =c( 'f', 'new_date', 'reading' )) # join changes to main df
 
-  temp_dat <- temp_dat %>%
-    ungroup () %>%
+  temp_dat <-
+    temp_dat %>%
+    ungroup() %>%
     group_by(f, plot, port, measure ) %>%
     arrange( reading ) %>%
     mutate( hours_skipped = ifelse( row_number() == 1 & is.na(change), 0, hours_skipped ))
@@ -76,12 +74,15 @@ correct_dates <- function(temp_dat, check, season, tod){
 
   # actually make the date changes here ----------------------------------------------------------------------------------
 
-  temp_dat <- temp_dat %>%
+  temp_dat <-
+    temp_dat %>%
     mutate( new_date = as.POSIXct(new_date - 60*60*hours_skipped, origin = '1970-01-01 00:00:00', tz = 'MST'))
 
   # ----------------------------------------------------------------------------------------------------------------------
-  temp_dat <- temp_dat %>%
-    mutate ( good_date = ifelse ( new_date >= date_started - 60*60*48 & new_date <= date_uploaded + 60*60*48 , 1, 0))
+  temp_dat <-
+    temp_dat %>%
+    mutate ( good_date = ifelse ( new_date >= date_started - 60*60*48 & new_date <= date_uploaded + 60*60*48 , 1, 0)) %>%
+    filter( good_date == 1)
 
   #temp_dat %>% ungroup() %>% distinct( f, new_date) %>% group_by(good_date) %>% summarise( n() )
 
@@ -95,7 +96,9 @@ correct_dates <- function(temp_dat, check, season, tod){
 
   # check earliest and latest dates -----------------------------------------------------------------
 
-  temp_dat %>% ungroup( ) %>% summarise ( max( new_date ), min( new_date ), which.min(new_date ), which.max(new_date ))
+  temp_dat %>%
+    ungroup( ) %>%
+    summarise ( max( new_date ), min( new_date ), which.min(new_date ), which.max(new_date ))
 
   # ----------------------------------------------------------------------------
 
@@ -109,8 +112,9 @@ correct_dates <- function(temp_dat, check, season, tod){
   temp_dat$month <- as.numeric( temp_dat$month)
   temp_dat$hour <- as.numeric( temp_dat$hour)
 
-  temp_dat <- merge( temp_dat, season, by = 'month')
-  temp_dat <- merge( temp_dat, tod, by = 'hour')
+  temp_dat <-
+    temp_dat %>%
+    select( - c(hours_skipped, reading_diff, jump, change ))
 
   return( temp_dat )
 

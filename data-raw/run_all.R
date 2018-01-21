@@ -8,7 +8,7 @@ library(zoo)
 # source all functions ------------------------------ #
 source( 'data-raw/import_and_format.R')
 source( 'data-raw/correct_dates.R' )
-source( 'data-raw/correct_values.R')
+source( 'data-raw/clean_values.R')
 source( 'data-raw/merge_with_climate.R')
 
 # input -------------------------------------------- #
@@ -21,21 +21,21 @@ folders <- dir('data-raw/raw_soil_data', pattern = '20[0-9]{2}_[1-2]$', full.nam
 weather <- read.csv('data-raw/USSES_climate.csv')
 
 # ---------------------------------------------------#
-daily_soil_moisture <- import_and_format(folders, quadrats, port_depth)
+daily_soil_moisture <-
+  import_and_format(folders, quadrats, port_info)
 
-check_dates(daily_soil_moisture)
-# Modify check dates.csv  by hand
+check_dates(daily_soil_moisture) # output check dates file
+# Modify check dates.csv  by hand and then read from csv
 check <- read_csv('data-raw/check_dates_modified.csv') # read in file modified by hand
-
-daily_soil_moisture %>% filter( reading == 76) %>% select( date, new_date, Time, plot )  %>% distinct()
 
 daily_soil_moisture <-
   daily_soil_moisture %>%
-  correct_dates(check = check, season = seasons, tod = tod) %>%
-  correct_values() %>%
+  correct_dates(check = check) %>%
+  clean_values() %>%
   merge_with_climate(station_dat = weather)
 
 # save processed and cleaned soil moisture data -------------
+
 devtools::use_data(daily_soil_moisture, compress = 'gzip')
 
 # save other files ------------------------------------------

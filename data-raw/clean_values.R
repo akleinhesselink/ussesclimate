@@ -1,8 +1,7 @@
 
 # Filter out bad readings ------------------------------------------------------------------------
 
-
-correct_values <- function(temp_dat ) {
+clean_values <- function(temp_dat ) {
 
   # My complicated steps for data classification:
   #   calculate rolling mean at 5 values
@@ -82,7 +81,7 @@ correct_values <- function(temp_dat ) {
   temp_dat <-
     temp_dat %>%
     group_by(plot, position, period, measure ) %>%
-    #filter( good_date ==  1) %>%
+    filter( good_date ==  1) %>%
     mutate( has_vals = sum(stat == 'raw' & !is.na(v) ) > 0 ) %>%
     filter( has_vals)
 
@@ -118,6 +117,15 @@ correct_values <- function(temp_dat ) {
   #     geom_line(data  = wide, aes( x = new_date, y =`rolling mean`), color = 'black', alpha = 0.5) +
   #     geom_point (data = subset(  wide, low_outlier == 1 ), aes( x = new_date, y = raw), color = 'green' ) +
   #     xlim( strptime( c('2012-04-01', '2012-09-01'), '%Y-%m-%d', tz = 'MST'))
+
+
+  temp_dat <-
+    temp_dat %>%
+    filter( stat == 'raw', bad_values == 0 ) %>%
+    select( -c( Tdiff, frame_length, dff, highv, out_range, total_bad,
+                bad_window, window_lengths, low_outlier, bad_values, has_vals))
+
+  temp_dat <- temp_dat %>% rename('value' = v)
 
   return(temp_dat)
 }
