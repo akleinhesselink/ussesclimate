@@ -1,10 +1,11 @@
 
-merge_with_climate <- function(df, station_dat){
+merge_with_climate <- function(mydat, station_dat){
 
   station_dat <-
     station_dat %>%
+    spread( ELEMENT, value) %>%
     mutate( TMEAN = ( TMAX + TMIN ) / 2 ) %>%
-    filter(date > '2011-01-01') %>%
+    filter(date > '2011-01-01', date < '2017-01-01') %>%
     select(date, PRCP, TMEAN)
 
   station_dat$PRCP[ is.na(station_dat$PRCP) ] <- 0
@@ -36,18 +37,18 @@ merge_with_climate <- function(df, station_dat){
 
   # clean-up decagon data -------------------
 
-  df$depth_label <- factor( df$depth , levels = c('air temperature', '5 cm deep', '25 cm deep') , order = TRUE )
-  df$Treatment_label <- factor(df$Treatment, levels = c('Drought', 'Control', 'Irrigation'), order = TRUE)
+  mydat$depth_label <- factor( mydat$depth , levels = c('air temperature', '5 cm deep', '25 cm deep') , order = TRUE )
+  mydat$Treatment_label <- factor(mydat$Treatment, levels = c('Drought', 'Control', 'Irrigation'), order = TRUE)
 
-  df <- df %>%
+  mydat <- mydat %>%
     mutate ( unique_position = paste0( plot, '.', position))
 
-  df$datetime <- df$new_date
+  mydat$datetime <- mydat$new_date
 
   station_dat$simple_date <- as.Date( station_dat$date, tz = 'MST')
 
-  df <- df %>% left_join( station_dat, by = c('year','simple_date'))
+  mydat <- mydat %>% left_join( station_dat, by = c('year','simple_date'))
 
-  return(df)
+  return(mydat)
 
 }

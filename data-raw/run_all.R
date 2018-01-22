@@ -6,11 +6,12 @@ library(stringr)
 library(zoo)
 
 # source all functions ------------------------------ #
+source( 'data-raw/get_weather.R')
+
 source( 'data-raw/import_and_format.R')
 source( 'data-raw/correct_dates.R' )
 source( 'data-raw/clean_values.R')
 source( 'data-raw/merge_with_climate.R')
-source( 'data-raw/clean_weather.R')
 
 # input -------------------------------------------- #
 load('data/weather.rda')
@@ -34,10 +35,11 @@ daily_soil_moisture <-
   correct_dates(check = check) %>%
   clean_values()
 
-daily_soil_moisture %>%
+daily_soil_moisture <-
+  daily_soil_moisture %>%
   merge_with_climate(station_dat = weather)
 
 # save processed and cleaned soil moisture data -------------
 
-devtools::use_data(daily_soil_moisture, compress = 'gzip')
+devtools::use_data(daily_soil_moisture, compress = 'gzip', overwrite = T)
 
