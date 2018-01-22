@@ -1,18 +1,16 @@
 
 merge_with_climate <- function(df, station_dat){
 
-  station_dat$date <-  as.POSIXct( strptime( station_dat$DATE, '%Y%m%d', tz = 'MST')  )
-
   station_dat <-
     station_dat %>%
     mutate( TMEAN = ( TMAX + TMIN ) / 2 ) %>%
     filter(date > '2011-01-01') %>%
     select(date, PRCP, TMEAN)
 
-  station_dat$PRCP[ station_dat$PRCP == -9999.0 ] <- 0
-  station_dat$TMEAN[ station_dat$TMEAN == -9999.0 ] <- NA
+  station_dat$PRCP[ is.na(station_dat$PRCP) ] <- 0
 
-  station_dat <- station_dat %>%
+  station_dat <-
+    station_dat %>%
     mutate( rainfall = rollapply(PRCP, 2, sum, fill = 0, na.rm = TRUE, align = 'right') ) %>%
     mutate( rainfall = ifelse( rainfall > 0.0 & TMEAN > 3 & !is.na(rainfall), 'rainy', 'not rainy'))
 
