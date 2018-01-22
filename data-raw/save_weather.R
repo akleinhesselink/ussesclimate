@@ -1,9 +1,14 @@
-
-get_weather <- function( ){
+rm(list = ls())
+save_weather <- function( ){
+  library(tidyverse)
+  library(devtools)
+  library(stringr)
 
   # get weather data
 
-  if( ! file.exists('data/weather.rda') ) {
+  if( file.exists('data/weather.rda') ) {
+    print( 'file exists, not downloading new data')
+  }else{
     dubois_exp_stn_url <- "https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/all/USC00102707.dly"
     data_readme_url <- "https://www1.ncdc.noaa.gov/pub/data/ghcn/daily/readme.txt"
 
@@ -47,8 +52,7 @@ get_weather <- function( ){
 
     # save output to data folder
     devtools::use_data(weather, overwrite = T)
-  }else( print( "File already exists, data not downloaded"))
-
+  }
 }
 
-get_weather()
+save_weather()

@@ -1,9 +1,8 @@
+require(tidyverse)
+require(stringr)
+require(zoo)
 
 import_and_format <- function( folders, q_info, port_depth) {
-  require(devtools)
-  require(tidyverse)
-  require(stringr)
-  require(zoo)
 
   # This function reads in and exports the decagon soil moisture and temperature data
   # from the raw data files.
