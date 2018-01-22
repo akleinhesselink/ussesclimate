@@ -133,8 +133,7 @@ import_and_format <- function( folders, q_info, port_depth) {
   }
 
   # end functions ------------------------------------------------------------- #
-  ncores <- parallel::detectCores()
-  temp_data <- parallel::mclapply( folders,  get_files, mc.cores = ncores)
+  temp_data <- lapply( folders,  get_files)
 
   temp_dat <- do.call( rbind, temp_data )  # bind the data lists from each folder
 
@@ -147,7 +146,7 @@ import_and_format <- function( folders, q_info, port_depth) {
 
   temp_dat <- merge( temp_dat, q_info, by = 'plot')
 
-  port_depth <- port_depth %>% gather( port, position, `Port.1`:`Port.5`)
+  port_depth <- port_depth %>% gather( port, position, `Port 1`:`Port 5`)
 
   port_depth$depth <- str_extract( port_depth$position, pattern = '(air)|([0-9]+)')
 

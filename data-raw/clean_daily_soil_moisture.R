@@ -36,10 +36,7 @@ clean_soil_moisture <- function(){
     daily_soil_moisture <-
       daily_soil_moisture %>%
       correct_dates(check = check) %>%
-      clean_values()
-
-    daily_soil_moisture <-
-      daily_soil_moisture %>%
+      clean_values() %>%
       merge_with_climate(station_dat = weather)
 
     devtools::use_data(daily_soil_moisture, compress = 'gzip', overwrite = T)

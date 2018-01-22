@@ -1,4 +1,4 @@
-rm(list = ls)
+rm(list = ls())
 
 library(tidyverse)
 library(devtools)
@@ -12,3 +12,4 @@ devtools::use_data(quadrats, seasons, tod, port_info, overwrite = T)
 
 source('data-raw/save_weather.R')
 source('data-raw/clean_daily_soil_moisture.R')
+
