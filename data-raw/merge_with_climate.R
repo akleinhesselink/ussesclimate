@@ -1,3 +1,7 @@
+require(tidyverse)
+require(stringr)
+require(zoo)
+
 
 merge_with_climate <- function(mydat, station_dat){
 

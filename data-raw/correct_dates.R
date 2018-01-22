@@ -1,5 +1,9 @@
+require(tidyverse)
+require(stringr)
+require(zoo)
 
 check_dates <- function( temp_dat ) {
+
   reading_list <- temp_dat %>% ungroup () %>% select( f, plot, id , period, new_date, reading ) %>% mutate( f = factor(f)) %>% distinct()
 
   table( reading_list$f, reading_list$period ) # one file per period

@@ -1,3 +1,6 @@
+require(tidyverse)
+require(stringr)
+require(zoo)
 
 # Filter out bad readings ------------------------------------------------------------------------
 

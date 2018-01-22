@@ -6,8 +6,6 @@ library(stringr)
 library(zoo)
 
 # source all functions ------------------------------ #
-source( 'data-raw/get_weather.R')
-
 source( 'data-raw/import_and_format.R')
 source( 'data-raw/correct_dates.R' )
 source( 'data-raw/clean_values.R')
@@ -15,11 +13,11 @@ source( 'data-raw/merge_with_climate.R')
 
 # input -------------------------------------------- #
 load('data/weather.rda')
+load('data/port_info.rda')
+load('data/quadrats.rda')
+load('data/tod.rda')
+load('data/seasons.rda')
 
-quadrats <- read.csv('data-raw/quad_info.csv')
-port_info <- read.csv('data-raw/sensor_positions.csv')
-seasons <- read.csv('data-raw/season_table.csv')
-tod <- read.csv('data-raw/tod_table.csv')
 folders <- dir('data-raw/raw_soil_data', pattern = '20[0-9]{2}_[1-2]$', full.names = TRUE)
 
 # ---------------------------------------------------#
